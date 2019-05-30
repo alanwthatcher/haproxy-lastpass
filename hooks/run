@@ -1,0 +1,21 @@
+#!/bin/bash
+
+
+{{#if cfg.lastpass.enabled}}
+# LOAD UP CREDS FROM LASTPASS IF CONFIGURED
+
+export LPASS_DISABLE_PINENTRY=1
+
+echo {{cfg.lastpass.password}} | lpass login {{cfg.lastpass.username}}
+
+HAPROXY_CREDS=$(lpass show haproxy --json)
+
+lpass logout -f
+
+export HAPROXY_STATS_AUTH_USER=$(echo ${HAPROXY_CREDS} | jq ".[0] | .username" -r)
+
+export HAPROXY_STATS_AUTH_PASSWORD=$(echo ${HAPROXY_CREDS} | jq ".[0] | .password" -r)
+{{~/if}}
+
+# START HAPROXY
+exec haproxy -f {{pkg.svc_config_path}}/haproxy.conf -db 2>&1
